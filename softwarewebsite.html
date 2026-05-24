@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nena's Minimart Premium Inventory System</title>
+  <style>
+    :root {
+      --primary: #ff6f00;
+      --primary-dark: #e65100;
+      --secondary: #2196F3;
+      --success: #4CAF50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Elegant Floating Food Backdrop Wrapper */
+    .animated-bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2001; /* Layered explicitly to float visible behind the login card */
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .floating-food {
+      position: absolute;
+      bottom: -50px;
+      font-size: 24px;
+      user-select: none;
+      animation: floatUpward linear infinite;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
+    @keyframes floatUpward {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.25; }
+      90% { opacity: 0.25; }
+      100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* Secure Login Gateway Portal Overlay with Backdrop Blur */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255, 111, 0, 0.9) 0%, rgba(255, 152, 0, 0.9) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.5s ease-in-out;
+    }
+
+    .login-card {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      z-index: 2005; /* Keeps input elements clickable above everything else */
+    }
+
+    .login-card h2 {
+      font-size: 2rem;
+      color: var(--primary-dark);
+      margin-bottom: 5px;
+      font-weight: 800;
+    }
+
+    .login-card p {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    .pin-input-field {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: 2px solid #ddd;
+      font-size: 1.5rem;
+      letter-spacing: 8px;
+      text-align: center;
+      outline: none;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .pin-input-field:focus {
+      border-color: var(--primary);
+    }
+
+    /* Main App wrapper hidden before auth validation completes */
+    .app-content-wrapper {
+      position: relative;
+      z-index: 5;
+      display: none;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--warning));
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 800;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Analytics Dashboard Grid */
+    .dashboard-wrapper {
+      max-width: 1200px;
+      margin: 25px auto 10px auto;
+      padding: 0 20px;
+      animation: fadeIn 1s ease both;
+      animation-delay: 0.2s;
+    }
+
+    .dashboard-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(5px);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      text-align: center;
+      border-bottom: 5px solid var(--secondary);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 { font-size: 0.9rem; color: #777; text-transform: uppercase; margin-bottom: 8px; }
+    .stat-card p { font-size: 1.8rem; font-weight: bold; color: #222; margin-bottom: 8px; }
+    .stat-card.revenue { border-color: var(--success); }
+    .stat-card.profit { border-color: #9c27b0; }
+
+    .stat-card.alerts {
+      border-color: var(--danger);
+      cursor: pointer;
+    }
+    .stat-card.alerts:active { transform: scale(0.98); }
+    .stat-badge-tip { font-size: 0.75rem; color: var(--danger); font-weight: 600; text-decoration: underline; }
+
+    .card-action-btn {
+      background: #9c27b0;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 15px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 5px rgba(156,39,176,0.2);
+    }
+    .card-action-btn:hover {
+      filter: brightness(0.9);
+      transform: scale(1.03);
+    }
+    .stat-card.revenue .card-action-btn {
+      background: var(--success);
+      box-shadow: 0 2px 5px rgba(76,175,80,0.2);
+    }
+
+    .controls-container {
+      max-width: 1200px;
+      margin: 0 auto 25px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 1s ease both;
+      animation-delay: 0.3s;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 30px;
+      border: 2px solid white;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 5px 20px rgba(255,111,0,0.2);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+    }
+    .nav-tabs button {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 30px;
+      background: white;
+      color: #555;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-tabs button.active, .nav-tabs button:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255,111,0,0.3);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 0 20px 40px 20px;
+    }
+
+    .section {
+      display: none;
+      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+
+    /* 2-Column Inventory Split Panel Layout Styles */
+    .inventory-split-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 25px;
+      align-items: start;
+    }
+
+    .categories-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .category-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(5px);
+      padding: 14px 18px;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.03);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .category-card:hover, .category-card.active {
+      transform: translateX(5px);
+      box-shadow: 0 8px 16px rgba(255,111,0,0.15);
+      border-color: var(--warning);
+      background: #fff;
+    }
+    .category-emoji {
+      font-size: 1.8rem;
+      margin-bottom: 0;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    .category-card:hover .category-emoji { transform: scale(1.15) rotate(5deg); }
+    .category-card h3 { font-size: 0.95rem; color: #444; font-weight: 700; flex: 1; }
+
+    .products-pane {
+      background: transparent;
+    }
+
+    .products-heading {
+      margin-bottom: 15px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e65100;
+      border-left: 5px solid var(--primary);
+      padding-left: 12px;
+      display: none;
+    }
+
+    .table-container {
+      background: rgba(255, 255, 255, 0.93);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.06);
+      margin-top: 0;
+      animation: popIn 0.4s ease both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.98); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    table.inventory-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    table.inventory-table th {
+      background-color: #fff3e0; color: var(--primary-dark); padding: 16px 20px;
+      font-weight: 700; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; border-bottom: 2px solid #ffe0b2;
+    }
+    table.inventory-table td { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; color: #444; vertical-align: middle; }
+    table.inventory-table tbody tr { transition: background-color 0.2s ease; }
+    table.inventory-table tbody tr:hover { background-color: #fffde7; }
+    table.inventory-table tbody tr:nth-child(even) { background-color: rgba(250, 250, 250, 0.7); }
+
+    .prod-name-cell { font-weight: 600; color: #111; }
+    .price-tag { font-weight: 600; font-family: monospace; font-size: 1rem; }
+
+    .stock-badge {
+      display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-align: center; min-width: 110px;
+    }
+    .stock-high { background: #e8f5e9; color: #2e7d32; }
+    .stock-medium { background: #fff3e0; color: #ef6c00; }
+    .stock-low { background: #ffebee; color: #c62828; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+    .table-actions { display: flex; gap: 8px; align-items: center; }
+    .table-actions button { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: all 0.2s ease; }
+    .table-actions .sold-btn { background: var(--danger); color: white; }
+    .table-actions .add-btn { background: var(--success); color: white; }
+    .table-actions .edit-icon-btn { background: #e0e0e0; color: #333; font-weight: 600; }
+    .table-actions button:hover { filter: brightness(0.9); transform: translateY(-1px); }
+
+    .form-box { background: rgba(255, 255, 255, 0.95); max-width: 600px; margin: 0 auto 40px auto; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
+    .form-box h3 { margin-bottom: 20px; text-align: center; color: var(--primary-dark); }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+    .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-size: 15px; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    .submit-btn {
+      width: 100%; padding: 14px; background: linear-gradient(90deg, var(--primary), var(--warning));
+      color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 5px 15px rgba(255,111,0,0.2); transition: all 0.3s ease;
+    }
+    .submit-btn:hover { transform: translateY(-2px); }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 3000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+
+    .receipt-container { background: #fff; padding: 25px; border-radius: 0; color: #000; font-family: 'Courier New', Courier, monospace; box-shadow: 0 0 15px rgba(0,0,0,0.1); border: 1px dashed #bbb; }
+    .receipt-header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+    .receipt-header h4 { font-size: 1.2rem; text-transform: uppercase; margin-bottom: 4px; font-weight: bold; }
+    .receipt-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
+    .receipt-total { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 8px 0; margin-top: 15px; font-weight: bold; font-size: 1.1rem; }
+
+    .history-container { background: rgba(255, 255, 255, 0.95); max-width: 900px; margin: auto; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .history-nav { display: flex; gap: 8px; }
+    .history-nav button { padding: 10px 18px; border: none; border-radius: 10px; background: #eee; cursor: pointer; font-weight: 600; transition: 0.2s; }
+    .history-nav button.active { background: #333; color: white; }
+    .danger-zone-btn { padding: 10px 18px; border: none; border-radius: 10px; background: var(--danger); color: white; font-weight: bold; cursor: pointer; }
+    .print-btn { padding: 10px 18px; border: none; border-radius: 10px; background: var(--secondary); color: white; font-weight: bold; cursor: pointer; margin-right: 5px; }
+    .log-list { list-style: none; max-height: 400px; overflow-y: auto; }
+    .log-list li { padding: 12px 15px; border-radius: 10px; background: #f9f9f9; margin-bottom: 8px; border-left: 4px solid #ccc; display: flex; justify-content: space-between; font-size: 0.95rem; }
+    .log-list li.sold-log { border-left-color: var(--danger); }
+    .log-list li.added-log { border-left-color: var(--success); }
+    .log-list li.withdraw-log { border-left-color: #9c27b0; }
+    .log-time { color: #999; font-size: 0.8rem; }
+
+    /* Responsive adjustments for smaller screen displays */
+    @media (max-width: 900px) {
+      .inventory-split-layout {
+        grid-template-columns: 1fr;
+      }
+      .category-card {
+        text-align: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 20px 15px;
+      }
+      .category-card:hover, .category-card.active {
+        transform: translateY(-5px);
+      }
+      .category-emoji { font-size: 2.5rem; }
+      .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+      }
+    }
+
+    @media print {
+      body { background: white; color: black; }
+      .animated-bg-container, .login-overlay, header, .dashboard-wrapper, .controls-container, .categories-grid, .table-container, .form-box, .history-header, .print-btn, .modal { display: none !important; }
+      .section { display: block !important; }
+      #receiptModal { display: flex !important; position: static !important; background: none !important; box-shadow: none !important; }
+      .modal-content { border: none !important; box-shadow: none !important; padding: 0 !important; max-width: 100% !important; }
+      .receipt-container { border: none !important; box-shadow: none !important; width: 100% !important; }
+      .receipt-print-btn-wrapper { display: none !important; }
+    }
+
+    /* Footer Style */
+    footer { text-align: center; padding: 20px; font-size: 0.75rem; color: #888; margin-top: 50px; }
+  </style>
+</head>
+<body>
+
+<div class="animated-bg-container" id="bgLayer"></div>
+
+<div class="login-overlay" id="appLockscreen">
+  <div class="login-card">
+    <h2>Hi there, Nena</h2>
+    <p>Please type your Admin PIN to unlock your management platform</p>
+    <input type="password" id="gatekeeperPin" class="pin-input-field" maxlength="4" placeholder="••••" onkeyup="checkGatekeeperAuth(event)" autofocus />
+    <button class="submit-btn" onclick="submitGatekeeperAuth()">Verify & Unlock</button>
+  </div>
+</div>
+
+<div class="app-content-wrapper" id="mainAppContent">
+  <header>🏪 Nena's Minimart Inventory System</header>
+
+  <div class="dashboard-wrapper">
+    <div class="dashboard-summary">
+      <div class="stat-card revenue">
+        <h3>Gross Revenue</h3>
+        <p id="totalRevenue">₱0.00</p>
+        <button class="card-action-btn" onclick="triggerRevenueWithdrawal()">💸 Withdraw Revenue</button>
+        <button class="card-action-btn" onclick="triggerRevenueDeposit()" style="background: #0288d1; margin-top: 5px;">📥 Deposit Capital</button>
+      </div>
+      <div class="stat-card profit">
+        <h3>Net Profit</h3>
+        <p id="totalProfit">₱0.00</p>
+        <button class="card-action-btn" onclick="triggerCashWithdrawal()">💸 Withdraw Cash</button>
+      </div>
+      <div class="stat-card alerts" onclick="filterCriticalStockView()">
+        <h3>Critical Stock</h3>
+        <p id="criticalAlertsCount">0 items</p>
+        <span class="stat-badge-tip">Click to view items</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-container">
+    <div class="search-box">
+      <input type="text" id="liveSearch" placeholder="Search product name here... (e.g., Nova, Tuna, Soap)" oninput="handleSearch()" />
+    </div>
+    <div class="nav-tabs">
+      <button id="btn-inventory" class="active" onclick="showSection('inventory')">Inventory</button>
+      <button id="btn-add-product" onclick="showSection('add-product')">+ Add New Item</button>
+      <button id="btn-records" onclick="showSection('records')">Record Logs</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="inventory" class="section" style="display: block;">
+      <div class="inventory-split-layout">
+        <div class="categories-panel">
+          <h2 style="text-align:left; margin-bottom:20px; font-weight: 600; color: #5d4037; font-size:1.3rem;">Product Categories</h2>
+          <div class="categories-grid" id="categoryContainer"></div>
+        </div>
+
+        <div class="products-pane">
+          <h3 class="products-heading" id="productsTitle">Product List</h3>
+          <div class="table-container" id="tableWrapper" style="display: none;">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Capital Cost</th>
+                  <th>Selling Price</th>
+                  <th>Current Stock</th>
+                  <th style="text-align: center;">Quick Stock Operations</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="add-product" class="section">
+      <div class="form-box">
+        <h3>New Product Registration</h3>
+        <form id="newProductForm" onsubmit="createNewProduct(event)">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="formCategory" required></select>
+          </div>
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="formName" placeholder="e.g., Piattos, Safeguard, Surf" required />
+          </div>
+          <div class="form-group">
+            <label>Initial Stock Quantity</label>
+            <input type="number" id="formStock" min="1" placeholder="Enter batch quantity amount" required />
+          </div>
+          <div class="form-group">
+            <label>Capital Cost (Per piece)</label>
+            <input type="number" step="0.01" id="formCost" placeholder="Supplier wholesale cost" required />
+          </div>
+          <div class="form-group">
+            <label>Selling Price (Per piece)</label>
+            <input type="number" step="0.01" id="formPrice" placeholder="Retail customer price" required />
+          </div>
+          <button type="submit" class="submit-btn">Save to Inventory</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="records" class="section">
+      <div class="history-container">
+        <div class="history-header">
+          <div class="history-nav">
+            <button id="hist-sold-btn" class="active" onclick="toggleHistoryView('sold')">Sales History</button>
+            <button id="hist-added-btn" onclick="toggleHistoryView('added')">Stock Inflows</button>
+            <button id="hist-withdraw-btn" onclick="toggleHistoryView('withdraw')">Withdrawal Logs</button>
+          </div>
+          <div>
+            <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
+            <button class="danger-zone-btn" onclick="clearHistoryLogs()">🧹 Clear Current Tab</button>
+          </div>
+        </div>
+        <ul id="historyList" class="log-list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3 style="margin-bottom: 15px; color: var(--primary-dark)">Adjust Product Pricing</h3>
+    <p id="editModalProductName" style="font-weight: bold; margin-bottom: 15px; color: #666;"></p>
+    <input type="hidden" id="editModalCategory" />
+    <input type="hidden" id="editModalIndex" />
+
+    <div class="form-group">
+      <label>Capital Cost (₱)</label>
+      <input type="number" step="0.01" id="editModalCost" required />
+    </div>
+    <div class="form-group">
+      <label>Selling Price (₱)</label>
+      <input type="number" step="0.01" id="editModalPrice" required />
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="submit-btn" onclick="saveProductEdits()" style="flex: 1;">Update Prices</button>
+      <button class="submit-btn" onclick="closeEditModal()" style="flex: 1; background: #999; box-shadow: none;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="receiptModal" class="modal">
+  <div class="modal-content" style="max-width: 400px; padding: 20px;">
+    <div class="receipt-container" id="printableReceiptArea"></div>
+    <div class="receipt-print-btn-wrapper" style="display: flex; gap: 10px; margin-top: 15px;">
+      <button class="submit-btn" onclick="window.print()" style="background: var(--secondary); box-shadow: none; flex: 1;">🖨️ Print Receipt</button>
+      <button class="submit-btn" onclick="closeReceiptModal()" style="background: #666; box-shadow: none; flex: 1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer>Owned By: Samuel Renomaro, John Mark Perez, and Joshua Hidalgo</footer>
+
+<script>
+const ADMIN_PIN = "1234";
+
+const categoriesData = {
+  "Snacks 🍟": [
+    "Piattos Cheese", "Nova Barbeque", "Chippy Barbeque", "Boy Bawang Garlic", "Cheezy Corn Crunch",
+    "V-Cut Onion Garlic", "Mr. Chips Cheese", "Clover Chips Ham", "Oishi Prawn Crackers", "Cracklings Salt Vinegar"
+  ],
+  "Canned Goods 🥫": [
+    "555 Sardines Tomato", "Ligo Sardines Spicy", "Mega Sardines Regular", "Century Tuna Flakes Oil", "Century Tuna Hot Spicy",
+    "Argentina Corned Beef", "Purefoods Corned Beef", "Star Corned Beef", "Argentina Meat Loaf"
+  ],
+  "Beverages 🥤": [
+    "Coca-Cola Original 290ml", "Sprite 290ml", "Royal Tru-Orange 290ml", "Pepsi Max", "Mountain Dew Neon",
+    "C2 Green Tea Apple", "Milo Ready To Drink", "Chuckie Chocolate Milk", "Absolute Mineral Water"
+  ],
+  "Powdered Beverages ☕": [
+    "Nescafe 3-in-1 Original", "Kopiko Blanca", "Great Taste White", "Nescafe Classic 25g", "Kopiko Brown Coffee",
+    "Milo Sachet 22g", "Bear Brand Powdered 33g", "Tang Orange Sachet", "Nestea Iced Tea Lemon"
+  ],
+  "Frozen Foods 🧊": [
+    "Tender Juicy Hotdog King", "Tender Juicy Cheesedog", "Swift Mighty Hotdog", "CDO Idol Cheesedog", "Pampanga Best Tocino",
+    "Mekeni Skinless Longganisa", "CDO Burger Patty", "Purefoods Chicken Nuggets", "CDO Fish Ball"
+  ],
+  "Condiments & Oil Essentials 🧂": [
+    "Baguio Coconut Oil 250ml", "Baguio Coconut Oil 1L", "Minola Premium Oil 500ml", "Golden Fiesta Palm Oil",
+    "Silver Swan Soy Sauce", "Datu Puti Vinegar", "Datu Puti Soy Sauce", "UFC Banana Ketchup", "Magic Sarap Sachet"
+  ],
+  "Alcohol 🍺": [
+    "Red Horse Beer 500ml", "San Miguel Light", "Pale Pilsen Grande", "San Mig Flavored Apple",
+    "Emperador Light 750ml", "Alfonso I Light", "Ginebra San Miguel Round", "Tanduay Dark Rhum"
+  ],
+  "Personal Care 🧴": [
+    "Safeguard Pure White Bar", "Safeguard Lemon Fresh", "Colgate Great Regular", "CloseUp Red Hot",
+    "Palmolive Naturals Shampoo", "Sunsilk Smooth Manageable", "Head and Shoulders Cool", "Rexona Powder Dry"
+  ],
+  "Laundry Detergents 🧺": [
+    "Surf Powder Blossom Fresh", "Surf Powder Sun Fresh", "Ariel Sunrise Fresh Powder", "Tide Bar Original",
+    "Breeze Power Powder", "Downy Sunrise Fresh", "Downy Antibac Fabric", "Zonrox Original Bleach"
+  ]
+};
+
+let inventory = JSON.parse(localStorage.getItem('nena_premium_inventory')) || {};
+let soldHistory = JSON.parse(localStorage.getItem('nena_premium_soldHistory')) || [];
+let addedHistory = JSON.parse(localStorage.getItem('nena_premium_addedHistory')) || [];
+let withdrawalHistory = JSON.parse(localStorage.getItem('nena_premium_withdrawalHistory')) || [];
+
+let totalWithdrawnDeductions = parseFloat(localStorage.getItem('nena_premium_withdrawnDeductions')) || 0;
+let totalRevenueDeductions = parseFloat(localStorage.getItem('nena_premium_revenueDeductions')) || 0;
+
+let lifetimeProfitPool = parseFloat(localStorage.getItem('nena_premium_lifetimeProfitPool')) || 0;
+let lifetimeRevenuePool = parseFloat(localStorage.getItem('nena_premium_lifetimeRevenuePool')) || 0;
+
+let currentHistoryTab = 'sold';
+let currentActiveCategory = '';
+let isCriticalStockFilterActive = false;
+
+// Gatekeeper Login authentication checks
+function checkGatekeeperAuth(event) {
+  if (event.key === 'Enter') {
+    submitGatekeeperAuth();
+  } else {
+    const input = document.getElementById('gatekeeperPin');
+    if (input.value === ADMIN_PIN) {
+      submitGatekeeperAuth();
+    }
+  }
+}
+
+function submitGatekeeperAuth() {
+  const pinValue = document.getElementById('gatekeeperPin').value;
+  if (pinValue === ADMIN_PIN) {
+    document.getElementById('appLockscreen').style.opacity = '0';
+    document.getElementById('bgLayer').style.zIndex = '-1';
+    setTimeout(() => {
+      document.getElementById('appLockscreen').style.display = 'none';
+      document.getElementById('mainAppContent').style.display = 'block';
+      alert("🌟 Welcome, Nena! Minimart data dashboard has loaded successfully.");
+    }, 400);
+  } else {
+    alert("❌ Invalid Admin Security PIN. Please try again.");
+    document.getElementById('gatekeeperPin').value = '';
+    document.getElementById('gatekeeperPin').focus();
+  }
+}
+
+function initFloatingBackground() {
+  const bgLayer = document.getElementById('bgLayer');
+  const foodEmojis = ['🍕', '🍔', '🍟', '🌭', '🍿', '🥓', '🥚', '🍩', '🍪', '🥫', '🥤', '🧊', '🧂', '🍺', '🧃', '🍗'];
+  bgLayer.innerHTML = '';
+  for(let i = 0; i < 20; i++) { createFloatingEmoji(bgLayer, foodEmojis, true); }
+}
+
+function createFloatingEmoji(container, emojiArray, initialSpawning = false) {
+  const el = document.createElement('div');
+  el.className = 'floating-food';
+  el.textContent = emojiArray[Math.floor(Math.random() * emojiArray.length)];
+  el.style.left = `${Math.random() * 100}%`;
+  const dimensions = Math.floor(Math.random() * 20) + 20;
+  el.style.fontSize = `${dimensions}px`;
+  const duration = Math.floor(Math.random() * 15) + 15;
+  el.style.animationDuration = `${duration}s`;
+  el.style.animationDelay = initialSpawning ? `-${Math.random() * duration}s` : '0s';
+  el.addEventListener('animationiteration', () => {
+    el.style.left = `${Math.random() * 100}%`;
+    el.textContent = emojiArray[Math.floor(Math.random() * emojiArray.length)];
+  });
+  container.appendChild(el);
+}
+
+function initializeDatabase() {
+  inventory = {};
+  for (let cat in categoriesData) {
+    inventory[cat] = categoriesData[cat].map(name => {
+      const cost = Math.floor(Math.random() * 40) + 10;
+      const profitMargin = Math.floor(Math.random() * 10) + 3;
+      return { name: name, stock: Math.floor(Math.random() * 15) + 1, cost: cost, price: cost + profitMargin };
+    });
+  }
+  lifetimeProfitPool = 0;
+  lifetimeRevenuePool = 0;
+  totalWithdrawnDeductions = 0;
+  totalRevenueDeductions = 0;
+  saveData();
+}
+
+if (Object.keys(inventory).length === 0 || !inventory["Laundry Detergents 🧺"]) {
+  initializeDatabase();
+}
+
+function saveData() {
+  localStorage.setItem('nena_premium_inventory', JSON.stringify(inventory));
+  localStorage.setItem('nena_premium_soldHistory', JSON.stringify(soldHistory));
+  localStorage.setItem('nena_premium_addedHistory', JSON.stringify(addedHistory));
+  localStorage.setItem('nena_premium_withdrawalHistory', JSON.stringify(withdrawalHistory));
+  localStorage.setItem('nena_premium_withdrawnDeductions', totalWithdrawnDeductions.toString());
+  localStorage.setItem('nena_premium_revenueDeductions', totalRevenueDeductions.toString());
+  localStorage.setItem('nena_premium_lifetimeProfitPool', lifetimeProfitPool.toString());
+  localStorage.setItem('nena_premium_lifetimeRevenuePool', lifetimeRevenuePool.toString());
+  updateAnalyticsDashboard();
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
+  document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(sectionId).style.display = 'block';
+  document.getElementById(`btn-${sectionId}`).classList.add('active');
+  if (sectionId === 'records') renderHistoryList();
+}
+
+function updateAnalyticsDashboard() {
+  let criticalCount = 0;
+
+  let activeRevenue = lifetimeRevenuePool - totalRevenueDeductions;
+  if (activeRevenue < 0) activeRevenue = 0;
+
+  let activeNetProfit = lifetimeProfitPool - totalWithdrawnDeductions;
+  if (activeNetProfit < 0) activeNetProfit = 0;
+
+  for (let cat in inventory) {
+    inventory[cat].forEach(item => { if (item.stock <= 3) criticalCount++; });
+  }
+
+  document.getElementById('totalRevenue').textContent = `₱${activeRevenue.toFixed(2)}`;
+  document.getElementById('totalProfit').textContent = `₱${activeNetProfit.toFixed(2)}`;
+  document.getElementById('criticalAlertsCount').textContent = `${criticalCount} item${criticalCount !== 1 ? 's' : ''}`;
+}
+
+// Helper to calculate present valid gross revenue credit
+function getAvailableRevenue() {
+  let activeRevenue = lifetimeRevenuePool - totalRevenueDeductions;
+  return activeRevenue < 0 ? 0 : activeRevenue;
+}
+
+// Manual Revenue deposit system engine
+function triggerRevenueDeposit() {
+  const pinInput = prompt("🔒 Enter Admin Security PIN to authorize Gross Revenue deposit credits:");
+  if (pinInput === null) return;
+
+  if (pinInput === ADMIN_PIN) {
+    const amountInput = prompt("Enter amount to deposit into Gross Revenue (₱):");
+    if (amountInput === null) return;
+
+    const depositAmount = parseFloat(amountInput);
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+      alert("Invalid deposit credit specified.");
+      return;
+    }
+
+    lifetimeRevenuePool += depositAmount;
+    const timeStampStr = new Date().toLocaleString();
+
+    addedHistory.unshift({
+      text: `Deposited Capital Credit into Revenue: +₱${depositAmount.toFixed(2)}`,
+      time: timeStampStr
+    });
+
+    saveData();
+    alert(`💸 Successfully credited ₱${depositAmount.toFixed(2)} directly into Gross Revenue.`);
+    if (isCriticalStockFilterActive) filterCriticalStockView();
+  } else {
+    alert("❌ Access Denied! Invalid Security PIN entered.");
+  }
+}
+
+function triggerRevenueWithdrawal() {
+  let activeRevenue = getAvailableRevenue();
+
+  if (activeRevenue <= 0) {
+    alert("There is currently no active revenue balance left in the register to withdraw.");
+    return;
+  }
+
+  const pinInput = prompt("🔒 Enter Admin Security PIN to authorize Gross Revenue withdrawal:");
+  if (pinInput === null) return;
+
+  if (pinInput === ADMIN_PIN) {
+    const amountInput = prompt(`Available Revenue to Withdraw: ₱${activeRevenue.toFixed(2)}\nEnter amount to withdraw (₱):`);
+    if (amountInput === null) return;
+
+    const withdrawAmount = parseFloat(amountInput);
+    if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+      alert("Invalid amount specified.");
+      return;
+    }
+
+    if (withdrawAmount > activeRevenue) {
+      alert("Insufficient Balance! You cannot withdraw more than the available Gross Revenue ledger.");
+      return;
+    }
+
+    totalRevenueDeductions += withdrawAmount;
+    const timeStampStr = new Date().toLocaleString();
+    const referenceNum = "REV-" + Math.floor(100000 + Math.random() * 900000);
+
+    withdrawalHistory.unshift({
+      text: `Withdrew Gross Revenue: ₱${withdrawAmount.toFixed(2)} (Ref: ${referenceNum})`,
+      time: timeStampStr,
+      amount: withdrawAmount,
+      reference: referenceNum
+    });
+
+    saveData();
+    generateReceiptPopup("Gross Revenue Outflow", referenceNum, timeStampStr, withdrawAmount, activeRevenue - withdrawAmount);
+    if (isCriticalStockFilterActive) filterCriticalStockView();
+  } else {
+    alert("❌ Access Denied! Invalid Security PIN entered.");
+  }
+}
+
+function triggerCashWithdrawal() {
+  let activeNetProfit = lifetimeProfitPool - totalWithdrawnDeductions;
+
+  if (activeNetProfit <= 0) {
+    alert("There is currently no net profit available in the pool to withdraw cash funds from.");
+    return;
+  }
+
+  const pinInput = prompt("🔒 Enter Admin Security PIN to authorize cash withdrawal:");
+  if (pinInput === null) return;
+
+  if (pinInput === ADMIN_PIN) {
+    const amountInput = prompt(`Available Max Profit to Withdraw: ₱${activeNetProfit.toFixed(2)}\nEnter amount to withdraw (₱):`);
+    if (amountInput === null) return;
+
+    const withdrawAmount = parseFloat(amountInput);
+    if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+      alert("Invalid amount specified.");
+      return;
+    }
+
+    if (withdrawAmount > activeNetProfit) {
+      alert("Insufficient Funds! You cannot withdraw an amount higher than the current net profit.");
+      return;
+    }
+
+    totalWithdrawnDeductions += withdrawAmount;
+    const timeStampStr = new Date().toLocaleString();
+    const referenceNum = "PRF-" + Math.floor(100000 + Math.random() * 900000);
+
+    withdrawalHistory.unshift({
+      text: `Withdrew Net Profit: ₱${withdrawAmount.toFixed(2)} (Ref: ${referenceNum})`,
+      time: timeStampStr,
+      amount: withdrawAmount,
+      reference: referenceNum
+    });
+
+    saveData();
+    generateReceiptPopup("Net Profit Cash Outflow", referenceNum, timeStampStr, withdrawAmount, activeNetProfit - withdrawAmount);
+    if (isCriticalStockFilterActive) filterCriticalStockView();
+  } else {
+    alert("❌ Access Denied! Invalid Security PIN entered.");
+  }
+}
+
+function generateReceiptPopup(receiptType, refNum, dateStr, amount, remainingBalance) {
+  const container = document.getElementById('printableReceiptArea');
+  if (remainingBalance < 0) remainingBalance = 0;
+  container.innerHTML = `
+    <div class="receipt-header">
+      <h4>NENA'S MINIMART</h4>
+      <p style="font-size:0.85rem; letter-spacing:1px; margin-top:3px;">${receiptType}</p>
+    </div>
+    <div class="receipt-row"><span>Reference:</span><strong>${refNum}</strong></div>
+    <div class="receipt-row"><span>Date/Time:</span><span style="font-size:0.85rem;">${dateStr}</span></div>
+    <div class="receipt-row" style="margin-top:15px;"><span>Status:</span><span style="color: green; font-weight: bold;">DISBURSED SECURELY</span></div>
+    <div class="receipt-total">
+      <div class="receipt-row"><span>CASH WITHDRAWN:</span><span>₱${amount.toFixed(2)}</span></div>
+    </div>
+    <div class="receipt-row" style="margin-top: 10px; font-size: 0.85rem; color:#444;">
+      <span>Remaining Pool Balance:</span><span>₱${remainingBalance.toFixed(2)}</span>
+    </div>
+  `;
+  document.getElementById('receiptModal').style.display = 'flex';
+}
+
+function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
+
+function filterCriticalStockView() {
+  showSection('inventory');
+  isCriticalStockFilterActive = true;
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+
+  const title = document.getElementById('productsTitle');
+  title.style.display = 'block';
+  title.textContent = "🚨 Low Stock Restock Panel (Qty ≤ 3)";
+
+  let criticalItemsList = [];
+  for (let cat in inventory) {
+    inventory[cat].forEach(item => {
+      if (item.stock <= 3) {
+        criticalItemsList.push({ ...item, originCategory: cat });
+      }
+    });
+  }
+
+  criticalItemsList.sort((a, b) => a.name.localeCompare(b.name));
+  renderTableRows(criticalItemsList, "CRITICAL_FILTER_MODE");
+}
+
+function renderCategories() {
+  const container = document.getElementById('categoryContainer');
+  const selectDropdown = document.getElementById('formCategory');
+  container.innerHTML = '';
+  selectDropdown.innerHTML = '';
+
+  for (let cat in inventory) {
+    const option = document.createElement('option');
+    option.value = cat; option.textContent = cat;
+    selectDropdown.appendChild(option);
+
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    card.id = `cat-card-${cat.replace(/[^a-zA-Z0-9]/g, "")}`;
+    const emojiStr = cat.match(/[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]/g) || ["🛒"];
+    const textLabel = cat.replace(emojiStr[0], "").trim();
+
+    card.innerHTML = `<span class="category-emoji">${emojiStr[0]}</span><h3>${textLabel}</h3>`;
+    card.onclick = () => selectCategory(cat);
+    container.appendChild(card);
+  }
+}
+
+function selectCategory(category) {
+  isCriticalStockFilterActive = false;
+
+  if (currentActiveCategory === category) {
+    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('productsTitle').style.display = 'none';
+    document.getElementById('tableWrapper').style.display = 'none';
+    currentActiveCategory = '';
+    return;
+  }
+
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+  currentActiveCategory = category;
+
+  const targetId = `cat-card-${category.replace(/[^a-zA-Z0-9]/g, "")}`;
+  if (document.getElementById(targetId)) document.getElementById(targetId).classList.add('active');
+
+  const title = document.getElementById('productsTitle');
+  title.style.display = 'block';
+  title.textContent = `Category: ${category}`;
+
+  let itemsSorted = [...inventory[category]].sort((a, b) => a.name.localeCompare(b.name));
+  renderTableRows(itemsSorted, category);
+}
+
+function renderTableRows(productsArray, categoryContext) {
+  const tableBody = document.getElementById('productTableBody');
+  const tableWrapper = document.getElementById('tableWrapper');
+  tableBody.innerHTML = '';
+
+  if (!productsArray || productsArray.length === 0) {
+    tableWrapper.style.display = 'none';
+    if (categoryContext === "CRITICAL_FILTER_MODE") {
+      tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color: green; font-weight: bold;">🎉 All store products are perfectly restocked and healthy!</td></tr>';
+      tableWrapper.style.display = 'block';
+    }
+    return;
+  }
+
+  tableWrapper.style.display = 'block';
+
+  productsArray.forEach((product) => {
+    let targetCategory = (categoryContext === "CRITICAL_FILTER_MODE") ? product.originCategory : categoryContext;
+    const masterIndex = inventory[targetCategory].findIndex(p => p.name === product.name);
+
+    let stockClass = 'stock-high';
+    let stockLabel = `Qty: ${product.stock}`;
+    if (product.stock === 0) { stockClass = 'stock-low'; stockLabel = 'OUT OF STOCK'; }
+    else if (product.stock <= 3) { stockClass = 'stock-low'; stockLabel = `Low Stock (${product.stock})`; }
+    else if (product.stock <= 8) { stockClass = 'stock-medium'; }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="prod-name-cell">${product.name} <small style="color:#888; font-weight:normal;">(${targetCategory})</small></td>
+      <td class="price-tag" style="color: #666;">₱${product.cost.toFixed(2)}</td>
+      <td class="price-tag" style="color: var(--primary-dark)">₱${product.price.toFixed(2)}</td>
+      <td><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
+      <td style="text-align: center;">
+        <div class="table-actions" style="justify-content: center;">
+          <button class="sold-btn" onclick="processSale('${targetCategory}', ${masterIndex})">Sold</button>
+          <button class="add-btn" onclick="incrementStock('${targetCategory}', ${masterIndex})">+ Stock</button>
+          <button class="edit-icon-btn" onclick="openEditModal('${targetCategory}', ${masterIndex})">⚙️ Prices</button>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
+}
+
+function openEditModal(category, index) {
+  const item = inventory[category][index];
+  document.getElementById('editModalProductName').textContent = `${item.name} (${category})`;
+  document.getElementById('editModalCategory').value = category;
+  document.getElementById('editModalIndex').value = index;
+  document.getElementById('editModalCost').value = item.cost;
+  document.getElementById('editModalPrice').value = item.price;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+
+function saveProductEdits() {
+  const category = document.getElementById('editModalCategory').value;
+  const index = document.getElementById('editModalIndex').value;
+  const newCost = parseFloat(document.getElementById('editModalCost').value);
+  const newPrice = parseFloat(document.getElementById('editModalPrice').value);
+
+  if (isNaN(newCost) || isNaN(newPrice) || newCost < 0 || newPrice < 0) {
+    alert("Please enter valid pricing entries.");
+    return;
+  }
+
+  const item = inventory[category][index];
+  const oldPrice = item.price;
+  item.cost = newCost;
+  item.price = newPrice;
+
+  addedHistory.unshift({
+    text: `Price Adjusted: ${item.name} from ₱${oldPrice.toFixed(2)} to ₱${newPrice.toFixed(2)}`,
+    time: new Date().toLocaleString()
+  });
+
+  saveData();
+  closeEditModal();
+  refreshActiveView();
+}
+
+function processSale(category, index) {
+  const item = inventory[category][index];
+  if (item.stock > 0) {
+    item.stock--;
+
+    lifetimeRevenuePool += item.price;
+    lifetimeProfitPool += (item.price - item.cost);
+
+    soldHistory.unshift({
+      text: `Sold: 1 pc of ${item.name} (Revenue: ₱${item.price.toFixed(2)} | Profit: ₱${(item.price - item.cost).toFixed(2)})`,
+      time: new Date().toLocaleString(),
+      price: item.price,
+      cost: item.cost
+    });
+
+    saveData();
+    refreshActiveView();
+  } else {
+    alert("This product is out of stock! Please restock first.");
+  }
+}
+
+// Quick increment operation checks and deducts Capital Cost from Gross Revenue balance credit
+function incrementStock(category, index) {
+  const item = inventory[category][index];
+  const currentRevenueCredit = getAvailableRevenue();
+
+  if (currentRevenueCredit < item.cost) {
+    alert(`❌ Cannot add stock! Insufficient Gross Revenue credits.\nRequired Capital Cost: ₱${item.cost.toFixed(2)}\nAvailable Revenue: ₱${currentRevenueCredit.toFixed(2)}\n\nPlease deposit revenue credits first.`);
+    return;
+  }
+
+  // Deduct wholesale capital cost from current pool ledger balance
+  totalRevenueDeductions += item.cost;
+  item.stock++;
+
+  addedHistory.unshift({
+    text: `Stock In: 1 pc of ${item.name} (Deducted Cost: -₱${item.cost.toFixed(2)} | New Qty: ${item.stock})`,
+    time: new Date().toLocaleString()
+  });
+
+  saveData();
+  refreshActiveView();
+}
+
+function refreshActiveView() {
+  if (isCriticalStockFilterActive) {
+    filterCriticalStockView();
+  } else {
+    const searchInput = document.getElementById('liveSearch').value.trim();
+    if (searchInput !== '') handleSearch();
+    else if (currentActiveCategory !== '') {
+      const tempCategory = currentActiveCategory;
+      currentActiveCategory = '';
+      selectCategory(tempCategory);
+    }
+  }
+}
+
+function handleSearch() {
+  isCriticalStockFilterActive = false;
+  currentActiveCategory = '';
+  const query = document.getElementById('liveSearch').value.toLowerCase().trim();
+  if (query === '') {
+    document.getElementById('productsTitle').style.display = 'none';
+    document.getElementById('tableWrapper').style.display = 'none';
+    return;
+  }
+
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+  const title = document.getElementById('productsTitle');
+  title.style.display = 'block';
+  title.textContent = `Search Results for: "${query}"`;
+
+  let matchedItems = [];
+  for (let cat in inventory) {
+    inventory[cat].forEach(item => {
+      if (item.name.toLowerCase().includes(query)) matchedItems.push({ ...item, originCategory: cat });
+    });
+  }
+  matchedItems.sort((a, b) => a.name.localeCompare(b.name));
+  renderTableRows(matchedItems, "SEARCH_MODE");
+}
+
+// New registration batch check requires and deducts total capital balance up-front
+function createNewProduct(e) {
+  e.preventDefault();
+  const cat = document.getElementById('formCategory').value;
+  const name = document.getElementById('formName').value.trim();
+  const stock = parseInt(document.getElementById('formStock').value);
+  const cost = parseFloat(document.getElementById('formCost').value);
+  const price = parseFloat(document.getElementById('formPrice').value);
+
+  const exists = inventory[cat].some(p => p.name.toLowerCase() === name.toLowerCase());
+  if (exists) {
+    alert("This product already exists! Use the '+ Stock' button to add more.");
+    return;
+  }
+
+  // Calculate total batch cost
+  const totalBatchCost = cost * stock;
+  const currentRevenueCredit = getAvailableRevenue();
+
+  if (currentRevenueCredit < totalBatchCost) {
+    alert(`❌ Registration Aborted! Insufficient Gross Revenue credit.\nTotal Batch Wholesale Cost: ₱${totalBatchCost.toFixed(2)}\nAvailable Revenue: ₱${currentRevenueCredit.toFixed(2)}\n\nPlease deposit revenue credits before registering.`);
+    return;
+  }
+
+  // Deduct batch registration cost from ledger credit balance
+  totalRevenueDeductions += totalBatchCost;
+
+  inventory[cat].push({ name, stock, cost, price });
+  addedHistory.unshift({
+    text: `New Item Registered: ${name} under ${cat} (${stock} pcs | Deducted Batch Cost: -₱${totalBatchCost.toFixed(2)})`,
+    time: new Date().toLocaleString()
+  });
+
+  saveData();
+  document.getElementById('newProductForm').reset();
+  alert("Product successfully added to inventory database!");
+  showSection('inventory');
+  currentActiveCategory = '';
+  selectCategory(cat);
+}
+
+function toggleHistoryView(tab) {
+  currentHistoryTab = tab;
+  document.getElementById('hist-sold-btn').classList.remove('active');
+  document.getElementById('hist-added-btn').classList.remove('active');
+  document.getElementById('hist-withdraw-btn').classList.remove('active');
+  document.getElementById(`hist-${tab}-btn`).classList.add('active');
+  renderHistoryList();
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+
+  let data = [];
+  if (currentHistoryTab === 'sold') data = soldHistory;
+  else if (currentHistoryTab === 'added') data = addedHistory;
+  else if (currentHistoryTab === 'withdraw') data = withdrawalHistory;
+
+  if (data.length === 0) {
+    list.innerHTML = '<li style="color:#aaa; text-align:center; padding:30px;">No logs discovered under this tab.</li>';
+    return;
+  }
+
+  data.forEach(log => {
+    const li = document.createElement('li');
+    if (currentHistoryTab === 'sold') li.className = 'sold-log';
+    else if (currentHistoryTab === 'added') li.className = 'added-log';
+    else if (currentHistoryTab === 'withdraw') li.className = 'withdraw-log';
+
+    li.innerHTML = `<span>${log.text || log}</span><span class="log-time">${log.time || ''}</span>`;
+    list.appendChild(li);
+  });
+}
+
+// Securely asks and validates admin PIN before clearing record logs
+function clearHistoryLogs() {
+  const pinInput = prompt("🔒 Enter Admin Security PIN to confirm history log deletion:");
+  if (pinInput === null) return;
+
+  if (pinInput === ADMIN_PIN) {
+    if (confirm(`Are you sure you want to clear current active tab logs? This process is permanent.`)) {
+      if (currentHistoryTab === 'sold') soldHistory = [];
+      else if (currentHistoryTab === 'added') addedHistory = [];
+      else if (currentHistoryTab === 'withdraw') withdrawalHistory = [];
+      saveData();
+      renderHistoryList();
+    }
+  } else {
+    alert("❌ Access Denied! Invalid Security PIN entered.");
+  }
+}
+
+window.onclick = function(event) {
+  if (event.target == document.getElementById('editModal')) closeEditModal();
+  if (event.target == document.getElementById('receiptModal')) closeReceiptModal();
+}
+
+initFloatingBackground();
+renderCategories();
+updateAnalyticsDashboard();
+</script>
+</body>
+</html>
